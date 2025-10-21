@@ -13,6 +13,7 @@ def get_connection():
 def init_db():
     conn = get_connection()
     cursor = conn.cursor()
+    cursor.execute("DROP TABLE IF EXISTS HasProject")
     cursor.execute("DROP TABLE IF EXISTS Project")
     cursor.execute("DROP TABLE IF EXISTS Employee")
     cursor.execute("DROP TABLE IF EXISTS Department")
@@ -37,10 +38,18 @@ def init_db():
     CREATE TABLE hw2.Project (
         project_id INT AUTO_INCREMENT PRIMARY KEY,
         project_name VARCHAR(100) NOT NULL,
-        employee_id INT,
         department_id INT,
-        FOREIGN KEY (employee_id) REFERENCES Employee(employee_id) ON DELETE CASCADE,
         FOREIGN KEY (department_id) REFERENCES Department(department_id)
+    );
+    """)
+
+    cursor.execute("""
+    CREATE TABLE hw2.HasProject (
+        project_id INT,
+        employee_id INT,
+        PRIMARY KEY (project_id, employee_id),
+        FOREIGN KEY (project_id) REFERENCES Project(project_id) ON DELETE CASCADE,
+        FOREIGN KEY (employee_id) REFERENCES Employee(employee_id) ON DELETE CASCADE
     );
     """)
 
@@ -59,10 +68,20 @@ def init_db():
     """)
 
     cursor.execute("""
-        INSERT INTO hw2.Project (project_name, employee_id, department_id) VALUES
-        ('Data analysis', 1, 1),
-        ('Web development', 2, 2),
-        ('Mobile app development', 3, 3);
+        INSERT INTO hw2.Project (project_name, department_id) VALUES
+        ('Data analysis', 1),
+        ('Web development', 2),
+        ('Mobile app development', 3);
+    """)
+
+    cursor.execute("""
+        INSERT INTO hw2.HasProject (project_id, employee_id) VALUES
+        (1, 1),
+        (1, 2),
+        (1, 3),
+        (2, 2),
+        (3, 3),
+        (2, 1);
     """)
 
     conn.commit()

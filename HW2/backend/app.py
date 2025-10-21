@@ -1,5 +1,5 @@
 from init_db import init_db
-from crud import add_department, add_employee, add_project, get_employee_details, delete_employee, update_employee, get_departments, get_projects
+from crud import add_department, add_employee, add_employee_to_project, add_project, get_employee_details, delete_employee, update_employee, get_departments, get_projects
 from flask import Flask, render_template, request, redirect, url_for
 init_db()
 
@@ -23,7 +23,17 @@ def add_employee_route():
 @app.route('/employees', methods=['GET'])
 def show_employees():
     employees = get_employee_details()
-    return render_template('employees.html', employees=employees)
+    employee_dict = {}
+    for employee in employees:
+        if employee_dict.get(employee['employee_id']) is None:
+            employee_dict[employee['employee_id']] = {
+                'employee_id': employee['employee_id'],
+                'name': employee['name'],
+                'department_name': employee['department_name'],
+                'projects': []
+            }
+        employee_dict[employee['employee_id']]['projects'].append(employee['project_name'])
+    return render_template('employees.html', employees=employee_dict.values())
 
 @app.route('/updateEmployee', methods=['GET', 'POST'])
 def update_employee_route():
@@ -81,7 +91,27 @@ def add_project_route():
 @app.route('/projects', methods=['GET'])
 def show_projects():
     projects = get_projects()
-    return render_template('projects.html', projects=projects)
+    projects_dict = {}
+    for project in projects:
+        if projects_dict.get(project['project_id']) is None:
+            projects_dict[project['project_id']] = {
+                'project_id': project['project_id'],
+                'project_name': project['project_name'],
+                'department_name': project['department_name'],
+                'employees': []
+            }
+        projects_dict[project['project_id']]['employees'].append(project['name'])
+    return render_template('projects.html', projects=projects_dict.values())
+
+@app.route('/addEmployeeToProject', methods=['GET', 'POST'])
+def add_employee_to_project_route():
+    if request.method == 'GET':
+        return render_template('addEmployeeToProject.html')
+    elif request.method == 'POST':
+        data = request.form.to_dict()
+        add_employee_to_project(data["employee_id"], data["project_id"])
+        print("Employee added to project successfully")
+        return redirect(url_for('show_projects'))
 
 if __name__ == '__main__':
     app.run(debug=True)

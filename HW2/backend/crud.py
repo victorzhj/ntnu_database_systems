@@ -52,14 +52,15 @@ def get_projects():
     cursor = conn.cursor(dictionary=True)
     query = """
     SELECT p.project_id, 
-           p.project_name, 
-           p.employee_id,
-           e.name AS employee_name,
+           p.project_name,
            p.department_id,
-           d.department_name
+           d.department_name,
+           e.employee_id,
+           e.name
     FROM Project p
-    LEFT JOIN Employee e ON p.employee_id = e.employee_id
-    LEFT JOIN Department d ON p.department_id = d.department_id;
+    LEFT JOIN Department d ON p.department_id = d.department_id
+    LEFT JOIN hasproject hp ON p.project_id = hp.project_id
+    LEFT JOIN Employee e ON hp.employee_id = e.employee_id;
     """
     cursor.execute(query)
     results = cursor.fetchall()
@@ -92,10 +93,11 @@ def get_employee_details():
     cursor = conn.cursor(dictionary=True)
     # Final SELECT with join across Employee, Department, and Project:
     query = """
-    SELECT e.employee_id, e.name, d.department_name, p.project_name
+    SELECT e.employee_id, e.name, d.department_name, hp.project_id, p.project_name
     FROM Employee e
     LEFT JOIN Department d ON e.department_id = d.department_id
-    LEFT JOIN Project p ON e.employee_id = p.employee_id;
+    LEFT JOIN HasProject hp ON e.employee_id = hp.employee_id
+    LEFT JOIN Project p ON hp.project_id = p.project_id;
     """
     cursor.execute(query)
     results = cursor.fetchall()
@@ -108,8 +110,15 @@ def delete_employee(employee_id):
     cursor = conn.cursor()
     query = "DELETE FROM Employee WHERE employee_id=%s"
     cursor.execute(query, (employee_id,))
-    query = "DELETE FROM project WHERE employee_id=%s"
-    cursor.execute(query, (employee_id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+def add_employee_to_project(employee_id, project_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+    query = "INSERT INTO HasProject (employee_id, project_id) VALUES (%s, %s)"
+    cursor.execute(query, (employee_id, project_id))
     conn.commit()
     cursor.close()
     conn.close()

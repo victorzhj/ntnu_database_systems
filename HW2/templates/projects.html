@@ -72,20 +72,16 @@
             <thead>
                 <tr>
                     <th>Name</th>
-                    <th>Employee ID</th>
-                    <td>Employee name</td>
-                    <th>Department ID</th>
                     <th>Department</th>
+                    <th>Employees</th>
                 </tr>
             </thead>
             <tbody>
                 {% for project in projects %}
                 <tr>
                     <td>{{ project.project_name }}</td>
-                    <td>{{ project.employee_id }}</td>
-                    <td>{{ project.employee_name }}</td>
-                    <td>{{ project.department_id }}</td>
                     <td>{{ project.department_name }}</td>
+                    <td>{{ project.employees | join(',')}}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -102,12 +98,22 @@
                 <label for="department_id">Department ID:</label>
                 <input type="text" id="department_id" name="department_id" required>
             </div>
+            <button type="submit">Add project</button>
+        </form>
+    </section>
+
+    <section id="assign-employee">
+        <h2>Assign Employee to Project</h2>
+        <form action="/addEmployeeToProject" method="POST">
             <div>
                 <label for="employee_id">Employee ID:</label>
                 <input type="text" id="employee_id" name="employee_id" required>
             </div>
-            <button type="submit">Add project</button>
+            <div>
+                <label for="project_id">Project ID:</label>
+                <input type="text" id="project_id" name="project_id" required>
+            </div>
+            <button type="submit">Assign</button>
         </form>
-    </section>
 </body>
 </html>
