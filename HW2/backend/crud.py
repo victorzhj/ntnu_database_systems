@@ -38,11 +38,11 @@ def add_employee(name, department_id):
     cursor.close()
     conn.close()
 
-def add_project(project_name, employee_id, department_id):
+def add_project(project_name, department_id):
     conn = get_connection()
     cursor = conn.cursor()
-    query = "INSERT INTO Project (project_name, employee_id, department_id) VALUES (%s, %s, %s)"
-    cursor.execute(query, (project_name, employee_id, department_id))
+    query = "INSERT INTO Project (project_name, department_id) VALUES (%s, %s)"
+    cursor.execute(query, (project_name, department_id))
     conn.commit()
     cursor.close()
     conn.close()

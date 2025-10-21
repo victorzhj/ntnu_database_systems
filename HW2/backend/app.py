@@ -84,7 +84,7 @@ def add_project_route():
         return render_template('addProject.html')
     elif request.method == 'POST':
         project_data = request.form.to_dict()
-        add_project(project_data["project_name"], project_data["employee_id"], project_data["department_id"])
+        add_project(project_data["project_name"], project_data["department_id"])
         print("Project added successfully")
         return redirect(url_for('show_projects'))
 
