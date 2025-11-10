@@ -10,7 +10,9 @@ config = {
     "port": int(os.getenv("PORT"))
 }
 
-mongo_client = pymongo.MongoClient(config["host"], config["port"])
+connection_string = os.getenv("CONNECTION_STRING")
+
+mongo_client = pymongo.MongoClient(connection_string)
 db = mongo_client.local
 words_collection = db.words
 

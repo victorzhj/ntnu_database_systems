@@ -10,7 +10,9 @@ config = {
     "port": int(os.getenv("PORT"))
 }
 
-mongo_client = pymongo.MongoClient(config["host"], config["port"])
+connection_url = os.getenv("CONNECTION_STRING")
+
+mongo_client = pymongo.MongoClient(connection_url)
 db = mongo_client.local
 deck_collection = db.decks
 
