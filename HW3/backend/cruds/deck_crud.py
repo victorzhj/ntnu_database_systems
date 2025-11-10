@@ -17,6 +17,10 @@ deck_collection = db.decks
 def get_all_decks(username):
     return deck_collection.find({"username": username})
 
+def get_single_deck(deck_id):
+    _id = bson.objectid.ObjectId(deck_id)
+    return deck_collection.find_one({"_id": _id})
+
 def create_deck(deck):
     deck_collection.insert_one(deck)
     return

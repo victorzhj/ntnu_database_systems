@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for
+from flask import Blueprint, render_template, request, redirect, url_for, session
 from cruds.user_crud import login_user, register_user, delete_user
 user_route = Blueprint('user_route', __name__, template_folder='../../frontend/user_templates')
 
@@ -12,7 +12,9 @@ def login_user_route():
     password = request.form['password']
     if login_user(username, password):
         print("Login successful")
-        return redirect(url_for('deck_route.show_decks'))
+        session['username'] = username
+        # TODO Change this to deck when deck route is ready
+        return redirect(url_for('word_route.show_words'))
     else:
         print("Invalid credentials")
         return redirect(url_for('user_route.login_route'))
@@ -23,20 +25,28 @@ def register_route():
 
 @user_route.route('/register', methods=['POST'])
 def register_user_route():
-    username = request.form['username']
-    password = request.form['password']
+    request_data = request.get_json()
+    username = request_data['username']
+    password = request_data['password']
     if register_user(username, password):
         print("Registration successful")
-        return redirect(url_for('user_route.login_route'))
+        print(url_for('user_route.login_route'))
+        return redirect(url_for('user_route.login_route'), code=201)
     else:
         print("Registration failed")
-        return redirect(url_for('user_route.register_route'))
+        return redirect(url_for('user_route.register_route'), code=409)
     
-@user_route.route('/deleteUser/<username>', methods=['POST'])
-def delete_user_route(username):
+@user_route.route('/deleteUser', methods=['POST'])
+def delete_user_route():
     try:
+        username = session.get('username')
         delete_user(username)
         print("User deleted successfully")
         return redirect(url_for('user_route.login_route'))
     except Exception as e:
         print(f"Error deleting user: {e}")
+
+@user_route.route('/logout', methods=['GET'])
+def logout_route():
+    session.pop('username', None)
+    return redirect(url_for('user_route.login_route'))

@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Flipcards</title>
+    <style>
+        :root{
+            --card-w: 220px;
+            --card-h: 140px;
+            --gap: 18px;
+            --bg: #f5f7fb;
+            --card-bg: #ffffff;
+            --accent: #2563eb;
+            --muted: #6b7280;
+            --radius: 10px;
+            --shadow: 0 6px 18px rgba(16,24,40,0.08);
+        }
+        html,body{height:100%;margin:0;background:linear-gradient(180deg,var(--bg),#ffffff 60%);font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial}
+        .wrap{max-width:1100px;margin:36px auto;padding:20px}
+        h1{margin:0 0 18px;font-size:20px;color:#111827}
+        .info{color:var(--muted);margin:0 0 18px;font-size:13px}
+        .grid{
+            display:flex;flex-wrap:wrap;gap:var(--gap);
+        }
+        .flip-card{
+            width:var(--card-w);
+            height:var(--card-h);
+            perspective:1000px;
+        }
+        .flip-card-inner{
+            position:relative;width:100%;height:100%;
+            transform-style:preserve-3d;
+            transition:transform .6s;
+            cursor:pointer;
+        }
+        .flip-card.flipped .flip-card-inner{transform:rotateY(180deg)}
+        .face{
+            position:absolute;inset:0;
+            backface-visibility:hidden;
+            border-radius:var(--radius);
+            box-shadow:var(--shadow);
+            display:flex;flex-direction:column;align-items:center;justify-content:center;
+            padding:12px;
+            background:var(--card-bg);
+        }
+        .front{border:1px solid rgba(16,24,40,0.06)}
+        .back{transform:rotateY(180deg);border:1px solid rgba(16,24,40,0.04)}
+        .lang{
+            position:absolute;top:8px;left:10px;font-size:11px;color:var(--muted);
+            background:rgba(255,255,255,0.6);padding:2px 6px;border-radius:999px;
+            border:1px solid rgba(16,24,40,0.04);
+        }
+        .word{font-size:28px;font-weight:600;color:#111827;line-height:1;margin:0}
+        .small{font-size:13px;color:var(--muted);margin-top:6px}
+        .meta{position:absolute;right:8px;bottom:8px;font-size:11px;color:var(--muted)}
+        .empty{color:var(--muted);padding:24px;background:transparent}
+        .error{color:#b91c1c}
+        @media (max-width:520px){
+            :root{--card-w:160px;--card-h:110px}
+        }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <h1>Flipcards</h1>
+        <p class="info">Click or press Enter/Space on a card to flip it. Data loaded from <code>/getWords</code>.</p>
+        <div id="grid" class="grid" aria-live="polite"></div>
+        <div id="message" class="empty" role="status" hidden></div>
+    </div>
+
+    <script>
+        async function loadCards() {
+            const grid = document.getElementById('grid');
+            const msg = document.getElementById('message');
+            grid.innerHTML = '';
+            msg.hidden = true;
+
+            try {
+                const res = await fetch('/getWords', {cache: 'no-store'});
+                if (!res.ok) throw new Error('Network response not ok: ' + res.status);
+                const data = await res.json();
+
+                const cards = Array.isArray(data) ? data : (data ? [data] : []);
+                if (!cards.length) {
+                    msg.textContent = 'No cards found.';
+                    msg.hidden = false;
+                    return;
+                }
+
+                for (const c of cards) {
+                    const id = c._id && (c._id.$oid || c._id) || '';
+                    const frontLang = c.front_lang || '';
+                    const backLang = c.back_lang || '';
+                    const frontText = c.front ?? '';
+                    const backText = c.back ?? '';
+                    const username = c.username ?? '';
+
+                    const el = document.createElement('div');
+                    el.className = 'flip-card';
+                    el.setAttribute('data-id', id);
+
+                    el.innerHTML = `
+                        <div class="flip-card-inner" tabindex="0" role="button" aria-pressed="false">
+                            <div class="face front">
+                                <div class="lang">${frontLang || 'front'}</div>
+                                <p class="word">${escapeHtml(frontText)}</p>
+                                <div class="small">${escapeHtml(frontLang ? frontLang : '')}</div>
+                                <div class="meta">${escapeHtml(username)}</div>
+                            </div>
+                            <div class="face back">
+                                <div class="lang">${backLang || 'back'}</div>
+                                <p class="word">${escapeHtml(backText)}</p>
+                                <div class="small">${escapeHtml(backLang ? backLang : '')}</div>
+                                <div class="meta">${escapeHtml(username)}</div>
+                            </div>
+                        </div>
+                    `;
+                    grid.appendChild(el);
+
+                    const inner = el.querySelector('.flip-card-inner');
+                    inner.addEventListener('click', () => {
+                        el.classList.toggle('flipped');
+                        inner.setAttribute('aria-pressed', el.classList.contains('flipped'));
+                    });
+                    inner.addEventListener('keydown', (ev) => {
+                        if (ev.key === 'Enter' || ev.key === ' ') {
+                            ev.preventDefault();
+                            el.classList.toggle('flipped');
+                            inner.setAttribute('aria-pressed', el.classList.contains('flipped'));
+                        }
+                    });
+                }
+
+            } catch (err) {
+                msg.textContent = 'Error loading cards: ' + (err.message || err);
+                msg.className = 'error';
+                msg.hidden = false;
+            }
+        }
+
+        function escapeHtml(s){
+            if (s === null || s === undefined) return '';
+            return String(s)
+                .replace(/&/g,'&amp;')
+                .replace(/</g,'&lt;')
+                .replace(/>/g,'&gt;')
+                .replace(/"/g,'&quot;')
+                .replace(/'/g,'&#39;');
+        }
+
+        document.addEventListener('DOMContentLoaded', loadCards);
+    </script>
+</body>
+</html>

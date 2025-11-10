@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Words</title>
+    <style>
+        /* Color + layout tokens for easier tuning */
+        :root{
+            --page-bg: #f4f6f8;
+            --card-bg: #ffffff;
+            --muted-bg: #f9fafb;
+            --muted-text: #666666;
+            --text: #111111;
+            --muted-2: #888888;
+            --border: #e6eaee;
+            --shadow: rgba(0,0,0,0.06);
+            --accent: #e7f5ff;
+            --accent-border: #bfe6ff;
+            --danger-bg: #ffecec;
+            --danger-border: #f5a7a7;
+            --gap: 12px;
+            --radius: 8px;
+            --topbar-height: 64px;
+            --max-width: 800px;
+            --page-padding: 20px;
+            --small-screen-padding: 12px;
+        }
+
+        /* Page */
+        html,body { height: 100%; }
+        body {
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+            margin: 0;
+            background: var(--page-bg);
+            padding: var(--page-padding);
+            padding-top: calc(var(--topbar-height) + 20px);
+            color: var(--text);
+            -webkit-font-smoothing:antialiased;
+        }
+
+        /* Top bar */
+        .topbar{
+            position: fixed;
+            inset: 0 0 auto 0; /* top, right, bottom, left shorthand */
+            height: var(--topbar-height);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 var(--page-padding);
+            gap: 12px;
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+            z-index: 50;
+        }
+        .topbar .left,
+        .topbar .right {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .topbar .title { font-weight: 600; color: #222; margin-left: 6px; }
+
+        /* Container for list of cards */
+        #cards {
+            display: flex;
+            flex-direction: column;
+            gap: var(--gap);
+            align-items: stretch;
+        }
+
+        /* Card */
+        .card-wrap{
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: 0 2px 6px var(--shadow);
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: 100%;
+            max-width: var(--max-width);
+            box-sizing: border-box;
+        }
+
+        /* Language header */
+        .langs{
+            font-size: 13px;
+            color: #444;
+            display:flex;
+            gap: 8px;
+            align-items:center;
+        }
+        .langs .arrow { margin: 0 6px; color: var(--muted-2); }
+
+        /* Word blocks row */
+        .words{
+            display:flex;
+            gap: 12px;
+            align-items:flex-start;
+            flex-wrap: wrap;
+        }
+        .word-block{
+            flex: 1 1 200px;
+            background: var(--muted-bg);
+            border-radius: 6px;
+            padding: 10px;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.6);
+            box-sizing: border-box;
+        }
+        .word-block .label{
+            font-size: 12px;
+            color: var(--muted-text);
+            margin-bottom: 6px;
+        }
+        .word-block .text{
+            font-size: 16px;
+            color: var(--text);
+            word-break: break-word;
+        }
+
+        /* Meta + actions */
+        .meta{
+            margin-top: 4px;
+            font-size: 12px;
+            color: #555;
+            display:flex;
+            justify-content: space-between;
+            gap: 6px;
+        }
+        .actions{
+            margin-top: 8px;
+            display:flex;
+            gap: 6px;
+        }
+
+        /* Buttons */
+        button{
+            padding: 6px 8px;
+            border-radius: 6px;
+            border: 1px solid #ccd;
+            background: #fff;
+            cursor: pointer;
+            font: inherit;
+        }
+        button.primary{
+            background: var(--accent);
+            border-color: var(--accent-border);
+        }
+        button.danger{
+            background: var(--danger-bg);
+            border-color: var(--danger-border);
+        }
+
+        /* Edit form */
+        form.edit{
+            display:flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-top: 8px;
+        }
+        /* Apply to all common input-like controls (existing inputs in template are plain inputs) */
+        input, textarea, select {
+            padding: 6px;
+            border-radius: 6px;
+            border: 1px solid #ccd;
+            width: 100%;
+            box-sizing: border-box;
+            font: inherit;
+        }
+
+        .hidden { display:none; }
+
+        .status{
+            margin-top: 12px;
+            color: #333;
+            font-size: 13px;
+        }
+
+        /* Responsive tweaks */
+        @media (max-width: 520px) {
+            .topbar{ padding: 0 10px; }
+            .topbar .left, .topbar .right { gap: 6px; }
+            button{ padding: 6px 8px; }
+            body{ padding-left: var(--small-screen-padding); padding-right: var(--small-screen-padding); }
+            .card-wrap{ padding: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="topbar" role="navigation" aria-label="Top bar">
+        <div class="left">
+            <button id="addBtn"  type="button" title="Add new card">Add Card</button>
+            <button id="flipBtn" type="button" title="Open flipcards">Flipcards</button>
+        </div>
+        <div class="right">
+            <button id="logoutBtn" class="danger" type="button" title="Logout">Logout</button>
+        </div>
+    </div>
+
+    <h2>Cards — list view</h2>
+    <div id="cards">Loading...</div>
+    <div id="status" class="status"></div>
+
+    <script>
+        function idOf(card) {
+            if (!card) return null;
+            if (typeof card._id === 'string') return card._id;
+            if (card._id && (card._id.$oid || card._id['$oid'])) return card._id.$oid || card._id['$oid'];
+            return JSON.stringify(card._id);
+        }
+
+        document.getElementById('addBtn').addEventListener('click', () => {
+            window.location.href = '/wordAddPage';
+        });
+        document.getElementById('flipBtn').addEventListener('click', () => {
+            window.location.href = '/flipcards';
+        });
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            window.location.href = '/logout';
+        });
+
+        async function loadWords() {
+            const container = document.getElementById('cards');
+            container.innerHTML = 'Loading...';
+            try {
+                const res = await fetch('/getWords');
+                if (!res.ok) throw new Error('Failed to fetch /words: ' + res.status);
+                const words = await res.json();
+                container.innerHTML = '';
+                if (!Array.isArray(words) || words.length === 0) {
+                    container.innerHTML = '<div>No words found.</div>';
+                    return;
+                }
+                words.forEach(w => container.appendChild(renderWord(w)));
+            } catch (err) {
+                container.innerHTML = '<div>Error loading words.</div>';
+                document.getElementById('status').textContent = err.message;
+                console.error(err);
+            }
+        }
+
+        function renderWord(card) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'card-wrap';
+
+            const langs = document.createElement('div');
+            langs.className = 'langs';
+            langs.innerHTML = `<strong>${escapeHtml(card.front_lang || '')}</strong><span class="arrow">→</span><strong>${escapeHtml(card.back_lang || '')}</strong>`;
+            wrapper.appendChild(langs);
+
+            const wordsRow = document.createElement('div');
+            wordsRow.className = 'words';
+
+            const frontBlock = document.createElement('div');
+            frontBlock.className = 'word-block';
+            frontBlock.innerHTML = `<div class="label">Front</div><div class="text">${escapeHtml(card.front || '')}</div>`;
+
+            const backBlock = document.createElement('div');
+            backBlock.className = 'word-block';
+            backBlock.innerHTML = `<div class="label">Back</div><div class="text">${escapeHtml(card.back || '')}</div>`;
+
+            wordsRow.appendChild(frontBlock);
+            wordsRow.appendChild(backBlock);
+            wrapper.appendChild(wordsRow);
+
+            const meta = document.createElement('div');
+            meta.className = 'meta';
+            meta.innerHTML = `<span>user: ${escapeHtml(card.username || '')}</span><span style="color:#888;">id: ${escapeHtml(idOf(card) || '')}</span>`;
+            wrapper.appendChild(meta);
+
+            const actions = document.createElement('div');
+            actions.className = 'actions';
+
+            const delBtn = document.createElement('button');
+            delBtn.textContent = 'Delete';
+            delBtn.className = 'danger';
+            delBtn.addEventListener('click', async (ev) => {
+                ev.stopPropagation();
+                if (!confirm('Delete this card?')) return;
+                await deleteWord(card, wrapper);
+            });
+
+            const editBtn = document.createElement('button');
+            editBtn.textContent = 'Modify';
+            editBtn.className = 'primary';
+            editBtn.addEventListener('click', (ev) => {
+                ev.stopPropagation();
+                showEditForm(card, wrapper);
+            });
+
+            actions.appendChild(editBtn);
+            actions.appendChild(delBtn);
+            wrapper.appendChild(actions);
+
+            return wrapper;
+        }
+
+        function showEditForm(card, wrapper) {
+            const existing = wrapper.querySelector('form.edit');
+            if (existing) {
+                existing.remove();
+                return;
+            }
+
+            const form = document.createElement('form');
+            form.className = 'edit';
+            form.innerHTML = `
+                <input name="front_lang" placeholder="front_lang" value="${escapeHtml(card.front_lang || '')}" />
+                <input name="back_lang" placeholder="back_lang" value="${escapeHtml(card.back_lang || '')}" />
+                <input name="front" placeholder="front" value="${escapeHtml(card.front || '')}" />
+                <input name="back" placeholder="back" value="${escapeHtml(card.back || '')}" />
+                <div style="display:flex; gap:6px;">
+                    <button type="submit" class="primary">Save</button>
+                    <button type="button" class="danger">Cancel</button>
+                </div>
+            `;
+
+            form.addEventListener('click', (e) => e.stopPropagation());
+            form.querySelector('button[type="button"]').addEventListener('click', () => form.remove());
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const formData = new FormData(form);
+                const payload = {
+                    _id: idOf(card),
+                    front_lang: formData.get('front_lang'),
+                    back_lang: formData.get('back_lang'),
+                    front: formData.get('front'),
+                    back: formData.get('back'),
+                };
+                try {
+                    const res = await fetch('/modifyWord', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!res.ok) throw new Error('Modify failed: ' + res.status);
+                    Object.assign(card, payload);
+                    const newNode = renderWord(card);
+                    wrapper.replaceWith(newNode);
+                    document.getElementById('status').textContent = 'Saved.';
+                } catch (err) {
+                    console.error(err);
+                    document.getElementById('status').textContent = 'Error saving: ' + err.message;
+                }
+            });
+
+            wrapper.appendChild(form);
+            form.querySelector('input[name="front"]').focus();
+        }
+
+        async function deleteWord(card, wrapper) {
+            const id = idOf(card);
+            try {
+                const res = await fetch('/deleteWords', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ _id: id })
+                });
+                if (!res.ok) throw new Error('Delete failed: ' + res.status);
+                wrapper.remove();
+                document.getElementById('status').textContent = 'Deleted.';
+            } catch (err) {
+                console.error(err);
+                document.getElementById('status').textContent = 'Error deleting: ' + err.message;
+            }
+        }
+
+        function escapeHtml(s) {
+            if (s == null) return '';
+            return String(s).replace(/[&<>"']/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+        }
+
+        loadWords();
+    </script>
+</body>
+</html>
