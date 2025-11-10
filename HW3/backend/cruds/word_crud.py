@@ -8,7 +8,7 @@ load_dotenv()
 connection_string = os.getenv("CONNECTION_STRING")
 
 mongo_client = pymongo.MongoClient(connection_string)
-db = mongo_client.local
+db = mongo_client.flipcardDB
 words_collection = db.words
 
 def get_word(id):

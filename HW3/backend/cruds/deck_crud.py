@@ -8,7 +8,7 @@ load_dotenv()
 connection_url = os.getenv("CONNECTION_STRING")
 
 mongo_client = pymongo.MongoClient(connection_url)
-db = mongo_client.local
+db = mongo_client.flipcardDB
 deck_collection = db.decks
 
 def get_all_decks(username):
