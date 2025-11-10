@@ -5,11 +5,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-config = {
-    "host": os.getenv("HOST"),
-    "port": int(os.getenv("PORT"))
-}
-
 connection_url = os.getenv("CONNECTION_STRING")
 
 mongo_client = pymongo.MongoClient(connection_url)
