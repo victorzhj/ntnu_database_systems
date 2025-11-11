@@ -12,4 +12,4 @@ To run the code for Homework 3, please follow these steps
 
 #### RENDER PAGE: https://ntnu-database-systems.onrender.com
 
-#### Youtube Demo Link: https://youtu.be/HEQxITb01m0
+#### Youtube Demo Link: https://youtu.be/ly5kHL71OaI
