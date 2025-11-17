@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Add cards</title>
+    <style>
+        /* base and layout to match words.html */
+        :root{
+            --accent:#2b6cb0;
+            --muted:#f4f6f8;
+            --card-bg:#ffffff;
+            --muted-2:#e6eaee;
+            --danger:#e53e3e;
+        }
+        html,body {
+            height:100%;
+            margin:0;
+            font-family: system-ui, Arial, sans-serif;
+            background:var(--muted);
+            color:#111;
+        }
+
+        /* topbar - match words.html look (fixed with subtle shadow) */
+        .topbar{
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 64px;
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--muted-2);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            padding: 0 20px;
+            gap: 12px;
+            z-index: 50;
+        }
+        .topbar .top-left,
+        .topbar .top-right {
+            display:flex;
+            gap:8px;
+            align-items:center;
+        }
+        .topbar .btn { padding:8px 12px; border-radius:6px; border:1px solid #ccd; background: #fff; cursor:pointer; }
+        .topbar .btn.primary { background:#e7f5ff; border-color:#bfe6ff; }
+        .topbar .btn.danger { background:#ffecec; border-color:#f5a7a7; }
+
+        /* page container - leave room for fixed topbar */
+        .container{
+            max-width:900px;
+            margin: 18px auto;
+            padding: 28px 16px;
+        }
+        body { padding-top: 84px; } /* avoid overlap with fixed topbar */
+
+        /* card list container */
+        .cards{display:flex;flex-direction:column;gap:12px}
+
+        /* per-card row: visually similar to words.html card-wrap */
+        .card-row{
+            display:grid;
+            grid-template-columns:1fr 1fr 80px;
+            gap:12px;
+            align-items:start;
+            padding:12px;
+            border-radius:8px;
+            background:var(--card-bg);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+            border:1px solid var(--muted-2);
+        }
+        .card-row > *{display:flex;flex-direction:column;gap:6px}
+        label{font-size:12px;color:#444; display:block; margin-bottom:6px}
+        select,input[type="text"]{
+            width:100%;
+            padding:8px;
+            border:1px solid #ccd;
+            border-radius:6px;
+            font-size:14px;
+            box-sizing:border-box;
+            background:#fff;
+        }
+
+        .small{font-size:12px;color:#666}
+        .controls{display:flex;gap:8px;align-items:center;margin-top:12px}
+        .add-btn{
+            display:inline-flex;align-items:center;gap:6px;padding:8px 10px;border-radius:8px;border:1px dashed #cbd5e0;background:transparent;cursor:pointer
+        }
+        .remove-btn{background:#fff;border:1px solid #f5c6c6;color:var(--danger);padding:6px 8px;border-radius:6px;cursor:pointer}
+        .submit-row{display:flex;justify-content:flex-end;margin-top:18px}
+        .msg{margin-top:12px;font-size:14px;color:#333}
+
+        .global-langs{display:flex;gap:12px;align-items:end;margin-bottom:12px}
+        @media (max-width:700px){
+            .card-row{grid-template-columns:1fr;grid-template-rows:auto auto auto;align-items:start;gap:12px}
+            .card-row > *{width:100%}
+            .global-langs{flex-direction:column;align-items:stretch}
+            body { padding-top: 92px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <div class="top-left">
+            <button class="btn ghost" id="cardsBtn">Cards</button>
+            <button class="btn" id="flipcardBtn">Flipcard</button>
+        </div>
+        <div class="top-right">
+            <button class="btn danger" id="logoutBtn">Log out</button>
+        </div>
+    </div>
+
+    <main class="container">
+        <h2>Add Cards to Deck</h2>
+
+        <form id="cardsForm">
+            <!-- Global language selectors (one for all cards) -->
+            <div class="global-langs" aria-label="Global languages">
+                <div style="width:160px">
+                    <label for="globalFrontLang">Front lang</label>
+                    <select id="globalFrontLang" name="front_lang">
+                        <option value="zh">zh</option>
+                        <option value="eng">eng</option>
+                        <option value="jp">jp</option>
+                    </select>
+                </div>
+                <div style="width:160px">
+                    <label for="globalBackLang">Back lang</label>
+                    <select id="globalBackLang" name="back_lang">
+                        <option value="eng">eng</option>
+                        <option value="zh">zh</option>
+                        <option value="jp">jp</option>
+                    </select>
+                </div>
+                <div class="small">Selected languages apply to all cards when saved.</div>
+            </div>
+
+            <div id="cardsContainer" class="cards" aria-live="polite"></div>
+
+            <div class="controls">
+                <button type="button" id="addCardBtn" class="add-btn">＋ Add card</button>
+                <span class="small">You can add multiple cards. Press the + button to add more.</span>
+            </div>
+
+            <div class="submit-row">
+                <button type="submit" class="btn" id="saveBtn">Save all cards</button>
+            </div>
+
+            <div id="message" class="msg" role="status" aria-live="polite"></div>
+        </form>
+    </main>
+
+    <script>
+        const cardsContainer = document.getElementById('cardsContainer');
+        const addCardBtn = document.getElementById('addCardBtn');
+        const cardsForm = document.getElementById('cardsForm');
+        const messageEl = document.getElementById('message');
+        const globalFront = document.getElementById('globalFrontLang');
+        const globalBack = document.getElementById('globalBackLang');
+
+        function createCardElement(card = {}) {
+            const frontText = card.front || '';
+            const backText = card.back || '';
+
+            const row = document.createElement('div');
+            row.className = 'card-row';
+
+            const frontWrap = document.createElement('div');
+            frontWrap.innerHTML = `<label>Front</label>
+                <input type="text" name="front" value="${escapeHtml(frontText)}" placeholder="Front text" required />`;
+
+            const backWrap = document.createElement('div');
+            backWrap.innerHTML = `<label>Back</label>
+                <input type="text" name="back" value="${escapeHtml(backText)}" placeholder="Back text" required />`;
+
+            const rightWrap = document.createElement('div');
+            rightWrap.style.display = 'flex';
+            rightWrap.style.flexDirection = 'column';
+            rightWrap.style.alignItems = 'flex-end';
+            rightWrap.style.gap = '6px';
+            rightWrap.innerHTML = `
+                <button type="button" class="remove-btn">Remove</button>
+            `;
+
+            rightWrap.querySelector('.remove-btn').addEventListener('click', () => {
+                row.remove();
+            });
+
+            row.appendChild(frontWrap);
+            row.appendChild(backWrap);
+            row.appendChild(rightWrap);
+
+            return row;
+        }
+
+        function escapeHtml(s) {
+            if (typeof s !== 'string') return '';
+            return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+        }
+
+        function init() {
+            const initialCard = {
+                front: '',
+                back: '',
+            };
+            setGlobalLangs(initialCard.front_lang, initialCard.back_lang);
+            addCard(initialCard);
+        }
+
+        function setGlobalLangs(front, back) {
+            if (globalFront) globalFront.value = front || globalFront.value;
+            if (globalBack) globalBack.value = back || globalBack.value;
+        }
+
+        function addCard(data) {
+            const el = createCardElement(data);
+            cardsContainer.appendChild(el);
+            const input = el.querySelector('input[name="front"]');
+            if (input) input.focus();
+        }
+
+        addCardBtn.addEventListener('click', () => addCard({}));
+
+        cardsForm.addEventListener('submit', async (ev) => {
+            ev.preventDefault();
+            messageEl.textContent = '';
+
+            const rows = Array.from(cardsContainer.querySelectorAll('.card-row'));
+            if (!rows.length) {
+                messageEl.textContent = 'Add at least one card.';
+                return;
+            }
+
+            const selectedFrontLang = globalFront.value;
+            const selectedBackLang = globalBack.value;
+
+            const cards = rows.map(r => {
+                const front = r.querySelector('input[name="front"]').value.trim();
+                const back = r.querySelector('input[name="back"]').value.trim();
+                return { front_lang: selectedFrontLang, back_lang: selectedBackLang, front, back };
+            });
+
+            for (const c of cards) {
+                console.log(c)
+                if (!c.front || !c.back) {
+                    messageEl.textContent = 'Each card needs front and back.';
+                    return;
+                }
+            }
+
+            try {
+                const res = await fetch('/addWords', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ cards })
+                });
+
+                if (!res.ok) {
+                    const txt = await res.text();
+                    messageEl.textContent = 'Failed to save: ' + (txt || res.statusText);
+                    return;
+                }
+
+                messageEl.textContent = 'Cards saved successfully.';
+            } catch (err) {
+                messageEl.textContent = 'Network error: ' + err.message;
+            }
+        });
+
+
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            window.location.href = '/logout';
+        });
+        document.getElementById('cardsBtn').addEventListener('click', () => location.href = '/words');
+        document.getElementById('flipcardBtn').addEventListener('click', () => location.href = '/flipcards');
+        init();
+    </script>
+</body>
+</html>

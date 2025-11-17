@@ -1,0 +1,29 @@
+import pymongo
+import os
+
+from dotenv import load_dotenv
+
+load_dotenv()
+
+connection_string = os.getenv("CONNECTION_STRING")
+
+mongo_client = pymongo.MongoClient(connection_string)
+db = mongo_client.flipcardDB
+user_collection = db.users
+
+def login_user(username, password):
+    user = user_collection.find_one({"username": username, "password": password})
+    if not user:
+        return False
+    return True
+
+def register_user(username, password):
+    user = user_collection.find_one({"username": username})
+    if user:
+        return False
+    user_collection.insert_one({"username": username, "password": password})
+    return True
+
+def delete_user(username):
+    user_collection.delete_one({"username": username})
+    return
